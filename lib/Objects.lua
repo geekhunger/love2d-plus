@@ -13,7 +13,7 @@ end
 
 function Object:draw()
   local angle  = math.rad(self:getRotation())
-  love.graphics.translate((-self:getPivotOffset():rotate(angle)):unpack())
+  love.graphics.translate((-self:getPivotOffset():permul(self:getScale()):rotate(angle)):unpack())
   love.graphics.rotate(angle)
   love.graphics.translate(self:getPosition():rotate(-angle):unpack())
   love.graphics.scale(self:getScale():unpack())
