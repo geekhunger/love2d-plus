@@ -1,7 +1,16 @@
 local function draw(obj) -- recursive
   for _, child in ipairs(obj) do
-    if child.draw then child:draw() end
-    if child.children then draw(child.children) end
+    love.graphics.push()
+    Object.draw(child)
+    if child.children then -- Group?
+      if child:pivotChildren() then
+        love.graphics.pop()
+        love.graphics.translate((child.offset):unpack())
+      end
+      draw(child.children)
+    end
+    child:draw()
+    love.graphics.pop()
   end
 end
 
@@ -58,26 +67,16 @@ function Group:draw()
   local w, h = self:getSize():unpack()
   
   love.graphics.push()
-  love.graphics.push()
-  love.graphics.push()
-  Object.draw(self)
-  if self:pivotChildren() then
-    love.graphics.pop()
-    love.graphics.translate((self.offset):unpack())
-  end
-  
   draw(self.children)
   
   -- Debug: bounding
-  love.graphics.setColor(255, 255, 0)
+  love.graphics.setColor(0, 0, 0)
   love.graphics.rectangle("line", 0, 0, w, h)
   
   -- Debug: pivot
   love.graphics.pop()
   love.graphics.setPointSize(7);
   love.graphics.point(x, y);
-  
-  love.graphics.pop()
 end
 
 function Group:pivotChildren(tag) -- set & get
