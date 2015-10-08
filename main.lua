@@ -5,7 +5,7 @@ function love.load()
   if arg[#arg] == "-debug" then require("mobdebug").start() end
   io.stdout:setvbuf("no")
   
-  rect1 = Rectangle(10, 10, 100, 100)
+  rect1 = Rectangle(-100, -100, 100, 100)
   --rect1:setPivot(0, 1)
   --rect1:setRotation(30)
   --rect1:setScale(1, 2)

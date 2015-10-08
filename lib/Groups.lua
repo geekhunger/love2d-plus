@@ -1,19 +1,3 @@
-local function draw(obj) -- recursive
-  for _, child in ipairs(obj) do
-    love.graphics.push()
-    Object.draw(child)
-    if child.children then -- Group?
-      if child:pivotChildren() then
-        love.graphics.pop()
-        love.graphics.translate((child.offset):unpack())
-      end
-      draw(child.children)
-    end
-    child:draw()
-    love.graphics.pop()
-  end
-end
-
 local function update(self)
   -- Update self.size and self.offset based on self.children
   if not self:pivotChildren() then return end
@@ -43,8 +27,21 @@ local function update(self)
   local min  = Vector(list.x[1], list.y[1])
   local max  = Vector(list.x[#list.x], list.y[#list.y])
   
-  self.offset = self:getPosition() - min
+  self.offset = -min--self:getPosition() - min
   self:setSize((max - min):unpack())
+  
+  print(self.offset)
+end
+
+local function draw(obj) -- recursive
+  for _, child in ipairs(obj) do
+    Object.draw(child)
+    love.graphics.translate((child.parent.offset or Vector(0, 0)):unpack())
+    child:draw()
+    if child.children then
+      draw(child.children)
+    end
+  end
 end
 
 
@@ -57,6 +54,7 @@ Group = class(Object)
 function Group:init(...)
   Object.init(self)
   self.offset = Vector(0, 0)
+  self.parent = self
   self._pivotChildren = false
   self.children = {}
   self:addChild(...)
@@ -67,14 +65,15 @@ function Group:draw()
   local w, h = self:getSize():unpack()
   
   love.graphics.push()
+  Object.draw(self)
   draw(self.children)
   
   -- Debug: bounding
+  love.graphics.pop()
   love.graphics.setColor(0, 0, 0)
-  love.graphics.rectangle("line", 0, 0, w, h)
+  love.graphics.rectangle("line", x, y, w, h)
   
   -- Debug: pivot
-  love.graphics.pop()
   love.graphics.setPointSize(7);
   love.graphics.point(x, y);
 end
