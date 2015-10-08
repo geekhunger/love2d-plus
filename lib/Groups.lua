@@ -27,21 +27,25 @@ local function update(self)
   local min  = Vector(list.x[1], list.y[1])
   local max  = Vector(list.x[#list.x], list.y[#list.y])
   
-  self.offset = -min--self:getPosition() - min
+  self.offset = -min
   self:setSize((max - min):unpack())
-  
-  print(self.offset)
 end
 
 local function draw(obj) -- recursive
-  for _, child in ipairs(obj) do
-    Object.draw(child)
-    love.graphics.translate((child.parent.offset or Vector(0, 0)):unpack())
-    child:draw()
-    if child.children then
-      draw(child.children)
+    for _, child in ipairs(obj.children and obj.children or {obj}) do
+      if not child.children then -- Object
+        Object.draw(child)
+        child:draw()
+      else
+        Object.draw(child)
+        if child.children then -- Group
+          if child:pivotChildren() then
+            love.graphics.translate((child.parent.offset):unpack())
+          end
+          draw(child.children)
+        end
+      end
     end
-  end
 end
 
 
@@ -53,29 +57,28 @@ Group = class(Object)
 
 function Group:init(...)
   Object.init(self)
-  self.offset = Vector(0, 0)
   self.parent = self
   self._pivotChildren = false
   self.children = {}
+  self.offset = Vector(0, 0)
   self:addChild(...)
 end
 
 function Group:draw()
-  local x, y = self:getPosition():unpack()
-  local w, h = self:getSize():unpack()
-  
   love.graphics.push()
-  Object.draw(self)
-  draw(self.children)
-  
-  -- Debug: bounding
+  draw(self) -- recursevly draw Group and all nested children
+    
+    local w, h = self:getSize():unpack()
+    
+    -- Debug: bounding
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle("line", 0, 0, w, h)
+    
+    -- Debug: pivot
+    love.graphics.setPointSize(5);
+    love.graphics.point(self:getPivotOffset():unpack());
+    
   love.graphics.pop()
-  love.graphics.setColor(0, 0, 0)
-  love.graphics.rectangle("line", x, y, w, h)
-  
-  -- Debug: pivot
-  love.graphics.setPointSize(7);
-  love.graphics.point(x, y);
 end
 
 function Group:pivotChildren(tag) -- set & get
