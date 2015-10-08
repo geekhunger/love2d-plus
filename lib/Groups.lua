@@ -1,7 +1,24 @@
+<<<<<<< Updated upstream
+=======
+local function draw(obj) -- recursive
+  for _, child in ipairs(obj) do
+    --love.graphics.push()
+    Object.draw(child)
+    if child.children then -- Group?
+      if child:pivotChildren() then
+        --love.graphics.pop()
+        love.graphics.translate((child.offset):unpack())
+      end
+      draw(child.children)
+    end
+    child:draw()
+    --love.graphics.pop()
+  end
+end
+
+>>>>>>> Stashed changes
 local function update(self)
   -- Update self.size and self.offset based on self.children
-  if not self:pivotChildren() then return end
-  
   local list = {x = {}, y = {}}
   local function collect(obj) -- recursive
     for _, child in ipairs(obj) do
