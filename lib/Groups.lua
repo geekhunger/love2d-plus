@@ -2,24 +2,20 @@ local function update(self)
   -- Update self.size and self.offset based on self.children
   if not self:pivotChildren() then return end
   
+  -- Gather all positions for sorting
   local list = {x = {}, y = {}}
-  local function collect(obj) -- recursive
-    for _, child in ipairs(obj) do
-      -- Gather all positions for sorting
-      local verts = {
-        child:getPivotPosition(0, 0) - child:getPivotOffset(),
-        child:getPivotPosition((-child:getPivot() + Vector(1, 1)):unpack())
-      }
-      for i = 1, #verts do
-        table.insert(list.x, verts[i].x)
-        table.insert(list.y, verts[i].y)
-      end
-      if child.children then collect(child.children) end
+  for _, child in ipairs(self.children) do
+    local verts = {
+      child:getPivotPosition(0, 0) - child:getPivotOffset(),
+      child:getPivotPosition((-child:getPivot() + Vector(1, 1)):unpack())
+    }
+    for i = 1, #verts do
+      table.insert(list.x, verts[i].x)
+      table.insert(list.y, verts[i].y)
     end
   end
   
   -- Find smallest and biggest positions and update self
-  collect(self.children)
   table.sort(list.x)
   table.sort(list.y)
   local min  = Vector(list.x[1], list.y[1])
