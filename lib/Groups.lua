@@ -7,10 +7,8 @@ local function update(self)
     for _, child in ipairs(obj) do
       -- Gather all positions for sorting
       local verts = {
-        child:getPivotPosition(0, 0),
-        child:getPivotPosition(0, 1),
-        child:getPivotPosition(1, 1),
-        child:getPivotPosition(1, 0)
+        child:getPivotPosition(0, 0) - child:getPivotOffset(),
+        child:getPivotPosition((-child:getPivot() + Vector(1, 1)):unpack())
       }
       for i = 1, #verts do
         table.insert(list.x, verts[i].x)
@@ -29,15 +27,18 @@ local function update(self)
   
   self.offset = -min
   self:setSize((max - min):unpack())
+  
+  print(self.offset)
 end
 
-local function draw(obj) -- recursive
-    for _, child in ipairs(obj) do
-      if child.pivotChildren and child:pivotChildren() then
+local function draw(children) -- recursive
+    for _, child in ipairs(children) do
+      love.graphics.push()
+      if child.parent.pivotChildren and child.parent:pivotChildren() then
         love.graphics.translate((child.parent.offset):unpack())
       end
       child:draw()
-      --if child.children and #child.children > 0 then draw(child.children) end -- nested Group
+      love.graphics.pop()
     end
 end
 
