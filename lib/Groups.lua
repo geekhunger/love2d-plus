@@ -32,19 +32,12 @@ local function update(self)
 end
 
 local function draw(obj) -- recursive
-    for _, child in ipairs(obj.children and obj.children or {obj}) do
-      if not child.children then -- Object
-        Object.draw(child)
-        child:draw()
-      else
-        Object.draw(child)
-        if child.children then -- Group
-          if child:pivotChildren() then
-            love.graphics.translate((child.parent.offset):unpack())
-          end
-          draw(child.children)
-        end
+    for _, child in ipairs(obj) do
+      if child.pivotChildren and child:pivotChildren() then
+        love.graphics.translate((child.parent.offset):unpack())
       end
+      child:draw()
+      --if child.children and #child.children > 0 then draw(child.children) end -- nested Group
     end
 end
 
@@ -66,7 +59,8 @@ end
 
 function Group:draw()
   love.graphics.push()
-  draw(self) -- recursevly draw Group and all nested children
+  Object.draw(self)
+  draw(self.children) -- recursevly draw all nested children
     
     local w, h = self:getSize():unpack()
     
