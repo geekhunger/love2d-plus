@@ -1,3 +1,48 @@
+local function update(self)
+  -- Update self.size and self.offset based on self.children
+  if not self:pivotChildren() then return end
+  
+  local list = {x = {}, y = {}}
+  local function collect(obj) -- recursive
+    for _, child in ipairs(obj) do
+      -- Gather all positions for sorting
+      local verts = {
+        child:getPivotPosition(0, 0) - child:getPivotOffset(),
+        child:getPivotPosition((-child:getPivot() + Vector(1, 1)):unpack())
+      }
+      for i = 1, #verts do
+        table.insert(list.x, verts[i].x)
+        table.insert(list.y, verts[i].y)
+      end
+      if child.children then collect(child.children) end
+    end
+  end
+  
+  -- Find smallest and biggest positions and update self
+  collect(self.children)
+  table.sort(list.x)
+  table.sort(list.y)
+  local min  = Vector(list.x[1], list.y[1])
+  local max  = Vector(list.x[#list.x], list.y[#list.y])
+  
+  self.offset = -min
+  self:setSize((max - min):unpack())
+  
+  print(self.offset)
+end
+
+local function draw(children) -- recursive
+    for _, child in ipairs(children) do
+      love.graphics.push()
+      if child.parent.pivotChildren and child.parent:pivotChildren() then
+        love.graphics.translate((child.parent.offset):unpack())
+      end
+      child:draw()
+      love.graphics.pop()
+    end
+end
+
+
 require "lib.Classes"
 require "lib.Vectors"
 require "lib.Objects"
@@ -6,37 +51,37 @@ Group = class(Object)
 
 function Group:init(...)
   Object.init(self)
+  self.parent = self
+  self._pivotChildren = false
   self.children = {}
+  self.offset = Vector(0, 0)
   self:addChild(...)
 end
 
-local function draw(children)
-  for _, child in ipairs(children) do
-    if child.draw then child:draw() end
-    if child.children then draw(child.children) end
-  end
-end
-
 function Group:draw()
-  local x, y = self:getPosition():unpack()
-  local w, h = self:getSize():unpack()
-  
-  love.graphics.push()
   love.graphics.push()
   Object.draw(self)
-  
-  draw(self.children)
-  
-  -- Debug: bounding
-  love.graphics.setColor(255, 255, 0)
-  love.graphics.rectangle("line", 0, 0, w, h)
-  
-  -- Debug: pivot
+  draw(self.children) -- recursevly draw all nested children
+    
+    local w, h = self:getSize():unpack()
+    
+    -- Debug: bounding
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle("line", 0, 0, w, h)
+    
+    -- Debug: pivot
+    love.graphics.setPointSize(5);
+    love.graphics.point(self:getPivotOffset():unpack());
+    
   love.graphics.pop()
-  love.graphics.setPointSize(7);
-  love.graphics.point(x, y);
-  
-  love.graphics.pop()
+end
+
+function Group:pivotChildren(tag) -- set & get
+  if tag then
+    self._pivotChildren = tag
+    update(self)
+  end
+  return self._pivotChildren
 end
 
 function Group:addChild(...)
@@ -61,13 +106,16 @@ function Group:addChild(...)
       table.insert(self.children, child)
     end
   end
+  
+  if self:pivotChildren() then update(self) end
 end
 
 function Group:removeChild(obj)
   for id, child in ipairs(self.children) do
-      if child == obj then
-        table.remove(self.children, id)
-        break
-      end
+    if child == obj then
+      table.remove(self.children, id)
+      break
     end
+  end
+  if self:pivotChildren() then update(self) end
 end
