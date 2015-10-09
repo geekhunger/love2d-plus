@@ -27,19 +27,6 @@ local function update(self)
   
   self.offset = -min
   self:setSize((max - min):unpack())
-  
-  print(self.offset)
-end
-
-local function draw(children) -- recursive
-    for _, child in ipairs(children) do
-      love.graphics.push()
-      if child.parent.pivotChildren and child.parent:pivotChildren() then
-        love.graphics.translate((child.parent.offset):unpack())
-      end
-      child:draw()
-      love.graphics.pop()
-    end
 end
 
 
@@ -61,18 +48,26 @@ end
 function Group:draw()
   love.graphics.push()
   Object.draw(self)
-  draw(self.children) -- recursevly draw all nested children
-    
-    local w, h = self:getSize():unpack()
-    
-    -- Debug: bounding
-    love.graphics.setColor(0, 0, 0)
-    love.graphics.rectangle("line", 0, 0, w, h)
-    
-    -- Debug: pivot
-    love.graphics.setPointSize(5);
-    love.graphics.point(self:getPivotOffset():unpack());
-    
+  
+  for _, child in ipairs(self.children) do
+    love.graphics.push()
+    if child.parent:pivotChildren() then
+      love.graphics.translate((child.parent.offset):unpack())
+    end
+    child:draw()
+    love.graphics.pop()
+  end
+  
+  local w, h = self:getSize():unpack()
+
+  -- Debug: bounding
+  love.graphics.setColor(0, 0, 0)
+  love.graphics.rectangle("line", 0, 0, w, h)
+
+  -- Debug: pivot
+  love.graphics.setPointSize(5);
+  love.graphics.point(self:getPivotOffset():unpack());
+
   love.graphics.pop()
 end
 
@@ -95,7 +90,6 @@ function Group:addChild(...)
         break
       end
     end
-    
     if duplicateId then
       -- Update drawing order
       table.insert(self.children, self.children[duplicateId])
@@ -106,7 +100,6 @@ function Group:addChild(...)
       table.insert(self.children, child)
     end
   end
-  
   if self:pivotChildren() then update(self) end
 end
 
